@@ -1,8 +1,22 @@
 const WebSocket = require('ws');
+const http = require('http');
 
-// Crear servidor WebSocket en el puerto 8080
-const wss = new WebSocket.Server({ port: 8080 });
-console.log('Servidor de señalización ejecutándose en el puerto 8080');
+// إنشاء خادم HTTP
+const server = http.createServer((req, res) => {
+  // إضافة نقطة فحص الصحة
+  if (req.url === '/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'OK', time: new Date().toISOString() }));
+    return;
+  }
+  
+  res.writeHead(404);
+  res.end();
+});
+
+// إنشاء خادم WebSocket باستخدام خادم HTTP
+const wss = new WebSocket.Server({ server });
+console.log('Servidor de señalización ejecutándose');
 
 // Almacenar usuarios y salas
 const rooms = {};
@@ -312,4 +326,9 @@ setInterval(() => {
   console.log(`Total: ${numRooms} salas, ${totalUsers} usuarios conectados`);
 }, 60000);
 
-console.log('Servidor de señalización listo para aceptar conexiones en el puerto 8080');
+// Usar puerto de las variables de entorno (importante para Render.com)
+const PORT = process.env.PORT || 8080;
+server.listen(PORT, () => {
+  console.log(`Servidor de señalización ejecutándose en el puerto ${PORT}`);
+  console.log(`Servidor de señalización listo para aceptar conexiones en el puerto ${PORT}`);
+});
